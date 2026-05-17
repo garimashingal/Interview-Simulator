@@ -1,21 +1,32 @@
 import { genAI } from "./gemini";
 import { geminiQueue } from "./queue";
 
-const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+const embeddingModel = genAI.getGenerativeModel({
+  model: "gemini-embedding-2",
+});
 
 // ── Retry helper (reused from gemini.ts pattern) ─────────────────────────────
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 4, baseDelayMs = 2000): Promise<T> {
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 4,
+  baseDelayMs = 2000,
+): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (err: unknown) {
       const isRateLimit =
         (err instanceof Error && err.message.includes("429")) ||
-        (typeof err === "object" && err !== null && "status" in err && (err as { status: number }).status === 429);
+        (typeof err === "object" &&
+          err !== null &&
+          "status" in err &&
+          (err as { status: number }).status === 429);
 
       if (isRateLimit && attempt < maxRetries) {
         const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
-        console.warn(`[Embedding] Rate limited. Retrying in ${Math.round(delay / 1000)}s`);
+        console.warn(
+          `[Embedding] Rate limited. Retrying in ${Math.round(delay / 1000)}s`,
+        );
         await new Promise((r) => setTimeout(r, delay));
       } else {
         throw err;
@@ -31,7 +42,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 4, baseDelayMs = 
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
   const result = await geminiQueue.add(() =>
-    withRetry(() => embeddingModel.embedContent(text))
+    withRetry(() => embeddingModel.embedContent(text)),
   );
   return result.embedding.values;
 }

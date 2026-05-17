@@ -18,7 +18,11 @@ export default function SetupPage() {
   const router = useRouter();
   const [jdText, setJdText] = useState("");
   const [skills, setSkills] = useState<ExtractedSkill[]>([]);
-  const [config, setConfig] = useState<SessionConfig>({ difficulty: "medium", questionCount: 5, enableCaptions: true });
+  const [config, setConfig] = useState<SessionConfig>({
+    difficulty: "medium",
+    questionCount: 5,
+    enableCaptions: true,
+  });
   const [step, setStep] = useState<"upload" | "config" | "ready">("upload");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -68,7 +72,7 @@ export default function SetupPage() {
     const file = e.dataTransfer.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setJdText(ev.target?.result as string ?? "");
+    reader.onload = (ev) => setJdText((ev.target?.result as string) ?? "");
     reader.readAsText(file);
   }, []);
 
@@ -76,20 +80,29 @@ export default function SetupPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">New Interview Session</h1>
-        <p className="text-slate-400 text-sm mt-1">Upload a Job Description to get started</p>
+        <p className="text-slate-400 text-sm mt-1">
+          Upload a Job Description to get started
+        </p>
       </div>
 
       {/* Step 1: JD Upload */}
       <Card variant="glass" className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step !== "upload" ? "bg-emerald-500 text-white" : "bg-brand-500 text-white"}`}>
+          <div
+            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step !== "upload" ? "bg-emerald-500 text-white" : "bg-brand-500 text-white"}`}
+          >
             {step !== "upload" ? "✓" : "1"}
           </div>
-          <h2 className="font-semibold text-white text-sm">Paste or Upload Job Description</h2>
+          <h2 className="font-semibold text-white text-sm">
+            Paste or Upload Job Description
+          </h2>
         </div>
 
         <div
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={`relative border-2 border-dashed rounded-xl p-4 transition-all ${isDragging ? "border-brand-500 bg-brand-500/5" : "border-surface-600 hover:border-surface-500"}`}
@@ -108,7 +121,9 @@ export default function SetupPage() {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-500">{jdText.length} characters</span>
+          <span className="text-xs text-slate-500">
+            {jdText.length} characters
+          </span>
           <Button
             variant="primary"
             size="sm"
@@ -124,18 +139,35 @@ export default function SetupPage() {
 
       {/* Step 2: Skills + Config */}
       {step !== "upload" && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-5"
+        >
           <Card variant="glass">
             <div className="flex items-center gap-2 mb-4">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step === "ready" ? "bg-emerald-500 text-white" : "bg-brand-500 text-white"}`}>2</div>
-              <h2 className="font-semibold text-white text-sm">Extracted Skills</h2>
-              <span className="text-xs text-slate-500 ml-auto">{skills.length} found</span>
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step === "ready" ? "bg-emerald-500 text-white" : "bg-brand-500 text-white"}`}
+              >
+                2
+              </div>
+              <h2 className="font-semibold text-white text-sm">
+                Extracted Skills
+              </h2>
+              <span className="text-xs text-slate-500 ml-auto">
+                {skills.length} found
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {skills.map((skill) => (
-                <Badge key={skill.normalizedName} variant={skill.isNew ? "new" : "brand"}>
+                <Badge
+                  key={skill.normalizedName}
+                  variant={skill.isNew ? "new" : "brand"}
+                >
                   {skill.normalizedName}
-                  {skill.isNew && <span className="text-xs opacity-60"> · new</span>}
+                  {skill.isNew && (
+                    <span className="text-xs opacity-60"> · new</span>
+                  )}
                 </Badge>
               ))}
             </div>
@@ -143,60 +175,97 @@ export default function SetupPage() {
 
           <Card variant="glass">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold">3</div>
-              <h2 className="font-semibold text-white text-sm">Interview Settings</h2>
+              <div className="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs font-bold">
+                3
+              </div>
+              <h2 className="font-semibold text-white text-sm">
+                Interview Settings
+              </h2>
             </div>
 
             <div className="space-y-5">
               {/* Difficulty */}
               <div>
-                <label className="text-xs text-slate-400 mb-2 block">Difficulty Level</label>
+                <label className="text-xs text-slate-400 mb-2 block">
+                  Difficulty Level
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {difficultyOptions.map(({ value, label, desc }) => (
-                    <button
+                    <Button
                       key={value}
-                      onClick={() => setConfig((c) => ({ ...c, difficulty: value }))}
+                      onClick={() =>
+                        setConfig((c) => ({ ...c, difficulty: value }))
+                      }
                       className={`p-3 rounded-xl border text-left transition-all ${config.difficulty === value ? "border-brand-500 bg-brand-500/10 text-brand-300" : "border-surface-600 text-slate-400 hover:border-surface-500"}`}
                     >
                       <div className="text-sm font-medium">{label}</div>
                       <div className="text-xs opacity-70">{desc}</div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
 
               {/* Question count */}
               <div>
-                <label className="text-xs text-slate-400 mb-2 block">Number of Questions: <span className="text-white">{config.questionCount}</span></label>
+                <label className="text-xs text-slate-400 mb-2 block">
+                  Number of Questions:{" "}
+                  <span className="text-white">{config.questionCount}</span>
+                </label>
                 <input
-                  type="range" min={3} max={10} value={config.questionCount}
-                  onChange={(e) => setConfig((c) => ({ ...c, questionCount: +e.target.value }))}
+                  type="range"
+                  min={3}
+                  max={10}
+                  value={config.questionCount}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, questionCount: +e.target.value }))
+                  }
                   className="w-full accent-brand-500"
                 />
-                <div className="flex justify-between text-xs text-slate-600 mt-1"><span>3</span><span>10</span></div>
+                <div className="flex justify-between text-xs text-slate-600 mt-1">
+                  <span>3</span>
+                  <span>10</span>
+                </div>
               </div>
 
               {/* Captions toggle */}
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-slate-300">Live Captions</div>
-                  <div className="text-xs text-slate-500">Show real-time speech transcription</div>
+                  <div className="text-xs text-slate-500">
+                    Show real-time speech transcription
+                  </div>
                 </div>
-                <button
-                  onClick={() => setConfig((c) => ({ ...c, enableCaptions: !c.enableCaptions }))}
+                <Button
+                  onClick={() =>
+                    setConfig((c) => ({
+                      ...c,
+                      enableCaptions: !c.enableCaptions,
+                    }))
+                  }
                   className={`w-10 h-5 rounded-full transition-all ${config.enableCaptions ? "bg-brand-500" : "bg-surface-600"}`}
                 >
-                  <span className={`block w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${config.enableCaptions ? "translate-x-5" : "translate-x-0"}`} />
-                </button>
+                  <span
+                    className={`block w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${config.enableCaptions ? "translate-x-5" : "translate-x-0"}`}
+                  />
+                </Button>
               </div>
             </div>
           </Card>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">{error}</div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
+              {error}
+            </div>
           )}
 
-          <Button variant="primary" size="lg" onClick={handleStart} isLoading={isStarting} className="w-full" rightIcon={<ChevronRight className="w-4 h-4" />}>
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleStart}
+            isLoading={isStarting}
+            className="w-full"
+            rightIcon={<ChevronRight className="w-4 h-4" />}
+          >
             Start Interview
           </Button>
         </motion.div>

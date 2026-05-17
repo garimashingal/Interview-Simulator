@@ -1,4 +1,7 @@
-import { GoogleGenerativeAI, type GenerateContentResult } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  type GenerateContentResult,
+} from "@google/generative-ai";
 import { geminiQueue } from "./queue";
 
 const API_KEY = process.env.GOOGLE_AI_API_KEY;
@@ -12,8 +15,8 @@ export const genAI = new GoogleGenerativeAI(API_KEY ?? "");
 // ── Exponential backoff retry wrapper ────────────────────────────────────────
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 4,
-  baseDelayMs = 2000
+  maxRetries = 1,
+  baseDelayMs = 2000,
 ): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -21,12 +24,17 @@ async function withRetry<T>(
     } catch (err: unknown) {
       const isRateLimit =
         (err instanceof Error && err.message.includes("429")) ||
-        (typeof err === "object" && err !== null && "status" in err && (err as { status: number }).status === 429);
+        (typeof err === "object" &&
+          err !== null &&
+          "status" in err &&
+          (err as { status: number }).status === 429);
 
       if (isRateLimit && attempt < maxRetries) {
         const delay = baseDelayMs * Math.pow(2, attempt); // 2s, 4s, 8s, 16s
-        const jitter = Math.random() * 1000;              // +0–1s jitter
-        console.warn(`[Gemini] Rate limited. Retrying in ${Math.round((delay + jitter) / 1000)}s (attempt ${attempt + 1}/${maxRetries})`);
+        const jitter = Math.random() * 1000; // +0–1s jitter
+        console.warn(
+          `[Gemini] Rate limited. Retrying in ${Math.round((delay + jitter) / 1000)}s (attempt ${attempt + 1}/${maxRetries})`,
+        );
         await new Promise((r) => setTimeout(r, delay + jitter));
       } else {
         throw err;
@@ -37,7 +45,10 @@ async function withRetry<T>(
 }
 
 // ── Simple in-memory response cache (keyed by prompt hash) ──────────────────
-const responseCache = new Map<string, { result: GenerateContentResult; ts: number }>();
+const responseCache = new Map<
+  string,
+  { result: GenerateContentResult; ts: number }
+>();
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
 
 function hashPrompt(prompt: string): string {
@@ -63,9 +74,15 @@ class SmartModel {
     });
   }
 
-  async generateContent(prompt: string, useCache = true): Promise<GenerateContentResult> {
+  async generateContent(
+    prompt: string,
+    useCache = true,
+  ): Promise<GenerateContentResult> {
     const key = hashPrompt(prompt);
-
+    console.log(
+      `[Gemini] Generating content for prompt (cache ${useCache ? "enabled" : "disabled"}):`,
+      prompt,
+    );
     // Return cached result if fresh
     if (useCache) {
       const cached = responseCache.get(key);
@@ -77,7 +94,7 @@ class SmartModel {
 
     // Enqueue → then retry on 429
     const result = await geminiQueue.add(() =>
-      withRetry(() => this.inner.generateContent(prompt))
+      withRetry(() => this.inner.generateContent(prompt)),
     );
 
     if (useCache) {
@@ -90,5 +107,5 @@ class SmartModel {
 
 // ── Exported model instances ─────────────────────────────────────────────────
 // Both use gemini-2.0-flash-lite (free tier: 30 RPM, 1,500 RPD)
-export const geminiFlash = new SmartModel("gemini-2.0-flash-lite", 0.2, 0.8);
-export const geminiPro   = new SmartModel("gemini-2.0-flash-lite", 0.3, 0.85);
+export const geminiFlash = new SmartModel("gemini-2.5-flash-lite", 0.2, 0.8);
+//export const geminiPro = new SmartModel("gemini-1.5-flash", 0.3, 0.85);

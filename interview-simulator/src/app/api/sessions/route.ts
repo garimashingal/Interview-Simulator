@@ -28,12 +28,23 @@ export async function POST(req: NextRequest) {
         // Generate questions for new skill via Gemini
         const prompt = buildQuestionGenerationPrompt(skill.normalizedName, 10);
         const result = await geminiFlash.generateContent(prompt);
+
+        console.log(
+          `[Sessions] Generated questions for skill "${skill.normalizedName}":`,
+          result.response.text(),
+        );
         const parsed = JSON.parse(result.response.text()) as {
-          questions: { question: string; gold_answer: string; difficulty: string }[];
+          questions: {
+            question: string;
+            gold_answer: string;
+            difficulty: string;
+          }[];
         };
 
         // Save new skill + questions to DB
-        let skillDoc = await Skill.findOne({ normalizedName: skill.normalizedName });
+        let skillDoc = await Skill.findOne({
+          normalizedName: skill.normalizedName,
+        });
         if (!skillDoc) {
           const skillEmbedding = await generateEmbedding(skill.normalizedName);
           skillDoc = await Skill.create({
@@ -55,17 +66,22 @@ export async function POST(req: NextRequest) {
             question: q.question,
             goldAnswer: q.gold_answer,
             embedding: embeddings[i],
-            difficulty: (q.difficulty as "easy" | "medium" | "hard") ?? "medium",
+            difficulty:
+              (q.difficulty as "easy" | "medium" | "hard") ?? "medium",
             source: "generated",
-          }))
+          })),
         );
         questionIds.push(...docs.map((d) => d._id as mongoose.Types.ObjectId));
       } else {
         // Fetch existing questions for this skill
-        const existing = await Question.find({ skillName: skill.normalizedName })
+        const existing = await Question.find({
+          skillName: skill.normalizedName,
+        })
           .limit(config.questionCount)
           .select("_id");
-        questionIds.push(...existing.map((q) => q._id as mongoose.Types.ObjectId));
+        questionIds.push(
+          ...existing.map((q) => q._id as mongoose.Types.ObjectId),
+        );
       }
     }
 
@@ -86,7 +102,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sessionId: session._id.toString() });
   } catch (err) {
     console.error("[Sessions POST]", err);
-    return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create session" },
+      { status: 500 },
+    );
   }
 }
 
@@ -94,10 +113,16 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     await connectDB();
-    const sessions = await Session.find({}).sort({ createdAt: -1 }).limit(20).lean();
+    const sessions = await Session.find({})
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
     return NextResponse.json({ sessions });
   } catch (err) {
     console.error("[Sessions GET]", err);
-    return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch sessions" },
+      { status: 500 },
+    );
   }
 }
